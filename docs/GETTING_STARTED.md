@@ -1,7 +1,5 @@
 # Getting Started — CKS Practice Labs
 
-A step-by-step guide to running the lab platform end-to-end.
-
 ---
 
 ## Prerequisites
@@ -10,134 +8,112 @@ A step-by-step guide to running the lab platform end-to-end.
 |------|---------|---------|
 | AWS CLI | >= 2.x | AWS authentication & ECR login |
 | Terraform | >= 1.5 | Infrastructure provisioning |
-| Docker | >= 24.x | Building container images |
+| Docker | >= 24.x | Building container images (local builds) |
 | kubectl | >= 1.28 | Kubernetes cluster access |
 | Node.js | >= 20.x | Local UI development (optional) |
 
 You also need:
-- An AWS account with admin-level IAM permissions (VPC, EKS, ECR, IAM)
+- An AWS account with IAM permissions (VPC, EKS, ECR, IAM)
 - An AWS CLI profile configured (`aws configure`)
-- An S3 bucket for Terraform state (or use local state for testing)
 
 ---
 
-## Option A: Full Deployment (EKS + Terminal)
+## Deployment Options
 
-### 1. Configure Terraform
+### Option 1: CI/CD Pipeline (Recommended)
 
-```bash
-cd cks-practice-labs/terraform
-cp terraform.tfvars.example terraform.tfvars
-```
+Push this repo to GitHub and use the built-in GitHub Actions workflows.
 
-Edit `terraform.tfvars`:
-```hcl
-region       = "eu-west-2"       # your preferred region
-cluster_name = "cks-practice-labs"
-```
+**One-time setup:**
 
-For the S3 backend, uncomment and fill in the `backend "s3"` block in `versions.tf`:
-```hcl
-backend "s3" {
-  bucket         = "your-terraform-state-bucket"
-  key            = "cks-practice-labs/terraform.tfstate"
-  region         = "eu-west-2"
-  dynamodb_table = "terraform-locks"
-  encrypt        = true
-}
-```
+1. Add these GitHub repository secrets:
+   - `AWS_ACCOUNT_ID` — your AWS account ID (e.g., `880145880830`)
+   - `AWS_ROLE_ARN` — IAM role ARN with OIDC trust for GitHub Actions
 
-Or remove the `backend "s3" {}` block entirely to use local state.
+2. Deploy infrastructure:
+   - Go to **Actions** → **Infrastructure** → **Run workflow**
+   - Select `apply` → Run
+   - This creates: VPC, EKS, ECR repos, ArgoCD, ALB controller, cluster autoscaler
 
-### 2. Spin Up Infrastructure
+3. Build and deploy the app:
+   - Go to **Actions** → **Build & Deploy** → **Run workflow**
+   - Select `all` + deploy = `true` → Run
+   - This builds both images (linux/amd64) → pushes to ECR → deploys to EKS
 
-```bash
-make infra-init    # terraform init
-make infra-up      # creates VPC + EKS + addons (~15-20 min)
-```
+4. Access:
+   ```bash
+   aws eks update-kubeconfig --name cks-practice-labs --region eu-west-2
+   kubectl port-forward svc/cks-practice-labs -n cks-practice-labs 3001:80
+   kubectl port-forward svc/workspace -n cks-workspace 7681:7681
+   ```
+   - UI: http://localhost:3001
+   - Terminal: http://localhost:7681/terminal/
 
-This provisions:
-- VPC with public/private subnets, single NAT gateway
-- EKS cluster with two spot node groups (app + workspace)
-- Cluster Autoscaler (scales workspace nodes to 0 when idle)
-- AWS Load Balancer Controller (ALB ingress)
-- ArgoCD
+**Subsequent deploys:** Just click "Run workflow" on **Build & Deploy** — no local Docker needed.
 
-### 3. Connect kubectl
+---
+
+### Option 2: Local CLI (`make up`)
+
+Single command that does everything:
 
 ```bash
-make kubeconfig
-# Equivalent to: aws eks update-kubeconfig --name cks-practice-labs --region eu-west-2
+make up
 ```
 
-Verify:
-```bash
-kubectl get nodes
-```
+This runs:
+1. `terraform apply` — creates VPC, EKS, ECR repos, addons
+2. `aws eks update-kubeconfig` — connects kubectl
+3. `docker build --platform linux/amd64` — builds both images
+4. `docker push` — pushes to ECR
+5. `kubectl apply` — deploys to EKS
 
-### 4. Create ECR Repos
-
-```bash
-make ecr-create
-```
-
-This creates two repositories:
-- `cks-practice-labs` (the UI)
-- `cks-workspace` (the terminal workspace)
-
-### 5. Build & Push Docker Images
-
-```bash
-make images        # builds both Docker images locally
-make push-all      # pushes to ECR
-```
-
-### 6. Update Image References
-
-Get your ECR URI:
-```bash
-AWS_ACCOUNT=$(aws sts get-caller-identity --query Account --output text)
-echo "${AWS_ACCOUNT}.dkr.ecr.eu-west-2.amazonaws.com"
-```
-
-Edit these files and replace `YOUR_ECR_REPO` with your ECR URI:
-- `k8s/deployment.yaml` → image field
-- `k8s/workspace/deployment.yaml` → image field
-
-### 7. Deploy to EKS
-
-```bash
-make deploy
-```
-
-### 8. Access the Platform
-
-**Option A — Port forward (no domain needed):**
+Then access:
 ```bash
 make port-forward
+# UI: http://localhost:3001
+# Terminal: http://localhost:7681
 ```
-- UI: http://localhost:3000
-- Terminal: http://localhost:7681 (also embedded in the UI)
-
-**Option B — Via domain (requires DNS + cert):**
-- Update `k8s/ingress.yaml` with your domain
-- Access via ALB URL shown in `kubectl get ingress -A`
 
 ---
 
-## Option B: UI Only (Local, No Cluster)
+### Option 3: UI Only (No Cluster)
 
-If you just want to browse questions, read solutions, and track progress:
+Browse questions, solutions, and track progress locally without AWS:
 
 ```bash
-cd cks-practice-labs
 npm install
 npm run dev
 ```
 
-Open http://localhost:3000
+Open http://localhost:3000. The terminal panel won't function (no workspace pod).
 
-The terminal panel won't function (no workspace pod), but all lab content, navigation, hints, solutions, and progress tracking work.
+---
+
+## Step-by-Step (Manual)
+
+If you prefer doing it piece by piece:
+
+```bash
+# 1. Deploy infrastructure (creates EKS + ECR + addons)
+make infra-init
+make infra-up        # ~15-20 minutes
+
+# 2. Connect kubectl
+make kubeconfig
+
+# 3. Build images (must use --platform linux/amd64 on Mac)
+make images
+
+# 4. Push to ECR
+make push-all
+
+# 5. Deploy to EKS
+make deploy
+
+# 6. Access
+make port-forward
+```
 
 ---
 
@@ -145,93 +121,85 @@ The terminal panel won't function (no workspace pod), but all lab content, navig
 
 ### Workflow
 
-1. Open the UI and select a question from the sidebar
-2. Read the **Given** context and **Requirements**
-3. Click **"Start Lab (Open Terminal)"** to open the embedded terminal
-4. In the terminal, initialize the lab:
+1. Open the UI (http://localhost:3001)
+2. Select a question from the sidebar
+3. Click **"Start Lab (Open Terminal)"**
+4. In the terminal, run:
    ```bash
-   setup-lab 07
+   setup-lab 4
    ```
-5. Solve the question using kubectl, vim, etc. in the terminal
+5. Solve the question using kubectl, vim, etc.
 6. Verify your solution:
    ```bash
-   verify-lab 07
+   verify-lab 4
    ```
-   Output shows PASS/FAIL for each verification check.
-7. Mark your result in the UI: **✓ Mark Passed** / **✗ Mark Failed**
-8. Clean up the environment:
+7. Mark result in the UI: **✓ Mark Passed** / **✗ Mark Failed**
+8. Clean up:
    ```bash
-   cleanup-lab 07
+   cleanup-lab 4
    ```
-9. Click **Next →** for the next question
+9. Click **Next →**
 
 ### Terminal Commands
 
 | Command | Description |
 |---------|-------------|
-| `setup-lab <num>` | Initialize lab environment (creates namespaces, pods, resources) |
-| `verify-lab <num>` | Run verification checks against your solution |
-| `cleanup-lab <num>` | Tear down the lab environment |
+| `setup-lab <num>` | Initialize lab environment |
+| `verify-lab <num>` | Run verification checks |
+| `cleanup-lab <num>` | Tear down lab environment |
 | `k` | Alias for `kubectl` |
-| `kn <namespace>` | Set current kubectl namespace |
-
-### Tips
-
-- Use **Hints** (collapsible) before revealing the solution
-- The **Verification Checks** section shows exactly what `verify-lab` tests
-- Solutions are hidden by default — click **🔒 Answer / Solution** to reveal
-- Your progress (passed/failed/in-progress) persists in the browser
+| `kn <namespace>` | Set current namespace |
 
 ---
 
 ## Cost Management
 
-### Idle Costs (~$3-5/day)
-- EKS control plane: $0.10/hr ($2.40/day)
-- 1x t3.medium spot app node: ~$0.01-0.02/hr
-- NAT gateway: $0.045/hr + data
+| State | Estimated Cost |
+|-------|---------------|
+| Idle (no labs running) | ~$3-5/day |
+| Active (workspace node up) | ~$5-8/day |
+| Destroyed | $0 |
 
-### Active Costs (~$5-8/day)
-- Above + 1x t3.large workspace node when labs are running
+**Cost savers already configured:**
+- Spot instances (60-90% cheaper)
+- Workspace nodes scale to 0 after 5 min idle
+- Single NAT gateway
+- ECR lifecycle policy keeps only 5 images
 
-### Saving Money
-- Workspace nodes scale to 0 automatically after 5 minutes of no pods
-- Run `make down` to destroy everything when not studying
-- Use `make infra-up` to spin back up (takes ~15 min)
-- All nodes are spot instances (60-90% cheaper than on-demand)
+**When done studying:**
+```bash
+make down    # Destroys ALL AWS resources
+```
+
+Re-create anytime with `make up` (~15 min).
 
 ---
 
-## Deploying via ArgoCD (GitOps)
+## CI/CD Workflows
 
-If you prefer GitOps over manual `kubectl apply`:
+| Workflow | Trigger | Options |
+|----------|---------|---------|
+| **Build & Deploy** | Manual (Actions tab) | `all` / `app-only` / `workspace-only` + deploy toggle |
+| **Infrastructure** | Manual (Actions tab) | `plan` / `apply` / `destroy` |
 
-1. Push this repo to GitHub/GitLab
-2. Edit `k8s/argocd-application.yaml`:
-   - Set `repoURL` to your git repo
-   - Set `targetRevision` to your branch
-3. Apply:
-   ```bash
-   make deploy-argocd
-   ```
-4. Access ArgoCD UI:
-   ```bash
-   make argocd-ui
-   # Username: admin
-   # Password shown in terminal output
-   ```
+### GitHub Secrets Required
 
-Now any push to `main` auto-deploys changes.
+| Secret | Value |
+|--------|-------|
+| `AWS_ACCOUNT_ID` | Your AWS account ID |
+| `AWS_ROLE_ARN` | IAM role with OIDC trust for GitHub Actions |
+
+To create the OIDC role, see: [GitHub OIDC with AWS](https://docs.github.com/en/actions/security-for-github-actions/security-hardening-your-deployments/configuring-openid-connect-in-amazon-web-services)
 
 ---
 
 ## Teardown
 
 ```bash
-make down    # terraform destroy — removes ALL AWS resources
+make down
 ```
 
-This destroys the EKS cluster, VPC, NAT gateway, node groups — everything. Your Terraform state is preserved in S3 so you can `make infra-up` again later.
+Or via GitHub Actions → **Infrastructure** → `destroy`.
 
 ---
 
@@ -239,9 +207,10 @@ This destroys the EKS cluster, VPC, NAT gateway, node groups — everything. You
 
 | Issue | Fix |
 |-------|-----|
-| `kubectl get nodes` shows nothing | Run `make kubeconfig` again |
-| Workspace pod pending | Workspace node group is scaling up from 0. Wait 2-3 min. |
-| Terminal iframe blank | Check workspace pod: `kubectl get pods -n cks-workspace` |
-| ECR push fails | Run `aws ecr get-login-password --region eu-west-2 \| docker login --username AWS --password-stdin <ecr-uri>` |
-| Terraform fails on destroy | Some resources may need manual deletion (ALB, security groups) |
-| API server 401 | kubeconfig expired. Run `make kubeconfig` |
+| `exec format error` in pod | Image built for ARM. Rebuild with `--platform linux/amd64` |
+| Pods stuck in Pending | Nodes full (t3.small = 8 pod limit). Scale down ArgoCD or add nodes |
+| Port 3000 taken | Use port 3001: `kubectl port-forward ... 3001:80` |
+| `setup-lab` not found | Workspace image needs rebuild (bashrc_append not sourced) |
+| ECR push 403 | Run `aws ecr get-login-password --region eu-west-2 \| docker login ...` |
+| Terraform: "not authorized to launch" | Account restricts instance types. Use t3.small/t3.micro |
+| Docker client version too old | Run `brew unlink docker` to use Docker Desktop's CLI |
