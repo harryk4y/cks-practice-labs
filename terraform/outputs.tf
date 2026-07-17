@@ -37,3 +37,13 @@ output "argocd_port_forward" {
   description = "Command to port-forward ArgoCD UI"
   value       = "kubectl port-forward svc/argocd-server -n argocd 8080:443"
 }
+
+output "ecr_app_url" {
+  description = "ECR repository URL for the app image"
+  value       = aws_ecr_repository.app.repository_url
+}
+
+output "ecr_workspace_url" {
+  description = "ECR repository URL for the workspace image"
+  value       = aws_ecr_repository.workspace.repository_url
+}

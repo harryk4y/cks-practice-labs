@@ -21,14 +21,14 @@ build: ## Build Next.js production
 # ─── Docker ──────────────────────────────────────────────────────────────────
 
 docker-build: ## Build the app Docker image
-	docker build -t $(APP_IMAGE):$(TAG) .
+	docker build --platform linux/amd64 -t $(APP_IMAGE):$(TAG) .
 
 docker-push: ## Push app image to ECR
 	aws ecr get-login-password --region $(REGION) | docker login --username AWS --password-stdin $(ECR_REPO)
 	docker push $(APP_IMAGE):$(TAG)
 
 workspace-build: ## Build the workspace Docker image
-	docker build -t $(WORKSPACE_IMAGE):$(TAG) docker/workspace/
+	docker build --platform linux/amd64 -t $(WORKSPACE_IMAGE):$(TAG) docker/workspace/
 
 workspace-push: ## Push workspace image to ECR
 	aws ecr get-login-password --region $(REGION) | docker login --username AWS --password-stdin $(ECR_REPO)
@@ -100,13 +100,15 @@ argocd-ui: ## Port-forward ArgoCD UI (https://localhost:8080)
 
 # ─── ECR Setup ───────────────────────────────────────────────────────────────
 
-ecr-create: ## Create ECR repositories
+ecr-create: ## Create ECR repositories (now handled by Terraform, kept for manual use)
+	@echo "ECR repos are created automatically by 'make infra-up' (terraform/ecr.tf)"
+	@echo "If you need to create them manually:"
 	aws ecr create-repository --repository-name cks-practice-labs --region $(REGION) --image-scanning-configuration scanOnPush=true || true
 	aws ecr create-repository --repository-name cks-workspace --region $(REGION) --image-scanning-configuration scanOnPush=true || true
 
 # ─── Full Lifecycle ──────────────────────────────────────────────────────────
 
-up: ecr-create infra-up kubeconfig images push-all deploy ## Full spin-up: infra + build + deploy
+up: infra-up kubeconfig images push-all deploy ## Full spin-up: infra + build + deploy
 	@echo ""
 	@echo "╔══════════════════════════════════════════════╗"
 	@echo "║  CKS Practice Labs is LIVE!                  ║"
