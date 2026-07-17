@@ -1,4 +1,4 @@
-# CKS Practice Labs
+# CKS Labs Deployment on EKS
 
 A web-based lab UI of CKS labs and mock exams. Hosted on EKS with spot instances, deployed via ArgoCD, with an embedded web terminal.
 
