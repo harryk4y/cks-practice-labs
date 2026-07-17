@@ -1,0 +1,48 @@
+---
+# ServiceAccount for workspace pods
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: workspace-sa
+  namespace: cks-workspace
+---
+# ClusterRole - workspace needs broad access to practice CKS tasks
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cks-workspace-role
+rules:
+  - apiGroups: [""]
+    resources: ["*"]
+    verbs: ["*"]
+  - apiGroups: ["apps"]
+    resources: ["*"]
+    verbs: ["*"]
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["*"]
+    verbs: ["*"]
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: ["*"]
+    verbs: ["*"]
+  - apiGroups: ["policy"]
+    resources: ["*"]
+    verbs: ["*"]
+  - apiGroups: ["cilium.io"]
+    resources: ["*"]
+    verbs: ["*"]
+  - apiGroups: ["node.k8s.io"]
+    resources: ["*"]
+    verbs: ["*"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cks-workspace-binding
+subjects:
+  - kind: ServiceAccount
+    name: workspace-sa
+    namespace: cks-workspace
+roleRef:
+  kind: ClusterRole
+  name: cks-workspace-role
+  apiGroup: rbac.authorization.k8s.io

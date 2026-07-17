@@ -1,0 +1,11 @@
+#!/bin/bash
+echo "[*] CIS Benchmark verification requires access to node filesystems"
+echo "[*] Check kube-bench output manually after applying fixes"
+echo ""
+echo "Expected results after fix:"
+echo "  [PASS] 1.2.17 --profiling=false in kube-apiserver"
+echo "  [PASS] 1.3.2  --profiling=false in controller-manager"
+echo "  [PASS] 1.4.1  --profiling=false in scheduler"
+echo "  [PASS] 4.2.6  protectKernelDefaults in kubelet config"
+echo ""
+echo "Run kube-bench to verify: kube-bench run -s master -c '1.2.17,1.3.2,1.4.1'"

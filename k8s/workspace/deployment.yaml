@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: workspace
+  namespace: cks-workspace
+  labels:
+    app.kubernetes.io/name: workspace
+    app.kubernetes.io/part-of: cks-practice-labs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: workspace
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: workspace
+    spec:
+      serviceAccountName: workspace-sa
+      tolerations:
+        - key: workspace
+          operator: Equal
+          value: "true"
+          effect: NoSchedule
+      nodeSelector:
+        role: workspace
+      containers:
+        - name: workspace
+          image: 880145880830.dkr.ecr.eu-west-2.amazonaws.com/cks-workspace:latest
+          # image: YOUR_ECR_REPO/cks-workspace:latest
+          ports:
+            - containerPort: 7681
+              name: ttyd
+              protocol: TCP
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "2"
+              memory: 2Gi
+          env:
+            - name: TERM
+              value: xterm-256color
+          volumeMounts:
+            - name: workspace-data
+              mountPath: /home/cks/work
+      volumes:
+        - name: workspace-data
+          emptyDir:
+            sizeLimit: 5Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: workspace
+  namespace: cks-workspace
+  labels:
+    app.kubernetes.io/name: workspace
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: workspace
+  ports:
+    - port: 7681
+      targetPort: 7681
+      protocol: TCP
+      name: ttyd

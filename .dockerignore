@@ -1,0 +1,10 @@
+node_modules
+.next
+.git
+.DS_Store
+terraform
+docker
+k8s
+docs
+*.md
+.env*

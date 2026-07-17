@@ -1,0 +1,22 @@
+# CKS Practice Labs shell helpers
+export PATH="/opt/labs:$PATH"
+
+alias k=kubectl
+alias kn='kubectl config set-context --current --namespace'
+complete -o default -F __start_kubectl k
+
+setup-lab() { bash /opt/labs/setup-lab.sh "$1"; }
+verify-lab() { bash /opt/labs/verify-lab.sh "$1"; }
+cleanup-lab() { bash /opt/labs/cleanup-lab.sh "$1"; }
+show-hint() { echo ""; echo "Check the UI hints panel for Q$1"; echo ""; }
+
+echo ""
+echo "╔══════════════════════════════════════════════╗"
+echo "║   CKS Practice Labs - Workspace Terminal     ║"
+echo "╠══════════════════════════════════════════════╣"
+echo "║  setup-lab <num>   - Setup lab environment   ║"
+echo "║  verify-lab <num>  - Verify your solution    ║"
+echo "║  cleanup-lab <num> - Tear down environment   ║"
+echo "║  k                 - kubectl alias           ║"
+echo "╚══════════════════════════════════════════════╝"
+echo ""

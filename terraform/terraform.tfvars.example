@@ -1,0 +1,27 @@
+# Copy this to terraform.tfvars and adjust values
+
+region       = "eu-west-2"
+cluster_name = "cks-practice-labs"
+
+# Cost optimization: use smallest viable spot instances
+spot_instance_types      = ["t3.medium", "t3a.medium"]
+workspace_instance_types = ["t3.large", "t3a.large", "m5.large"]
+
+# Scale workspace nodes to 0 when not in use (autoscaler handles scaling up)
+min_nodes            = 1
+max_nodes            = 2
+workspace_min_nodes  = 0
+workspace_max_nodes  = 2
+
+# Optional: set your domain for ingress
+domain_name = ""
+
+environment = "dev"
+
+tags = {
+  Project     = "cks-practice-labs"
+  ManagedBy   = "terraform"
+  Environment = "dev"
+  CostCenter  = "training"
+  Owner       = "your-email@example.com"
+}

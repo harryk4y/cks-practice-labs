@@ -1,0 +1,28 @@
+#!/bin/bash
+echo "[*] Setting up Q13 — Image Vulnerability Scanning"
+echo ""
+
+mkdir -p /var/work/tests/artifacts/15/
+
+echo "Task:"
+echo "  Use trivy to scan the following images for vulnerabilities."
+echo "  Find which images have the listed CVEs and save results."
+echo ""
+echo "  Images to scan:"
+echo "    - nginx:1.19"
+echo "    - httpd:2.4.51"
+echo "    - node:16-slim"
+echo ""
+echo "  CVEs to find:"
+echo "    - CVE-2021-28831"
+echo "    - CVE-2021-3711"
+echo "    - CVE-2022-0778"
+echo ""
+echo "  Save output:"
+echo "    1. For each CVE, write which image(s) contain it"
+echo "    2. Save to /var/work/tests/artifacts/15/cve-report.txt"
+echo "    Format: <CVE> : <image>"
+echo ""
+echo "  Example usage:"
+echo "    trivy image --severity HIGH,CRITICAL nginx:1.19"
+echo "    trivy image nginx:1.19 | grep CVE-2021-28831"

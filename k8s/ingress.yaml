@@ -1,0 +1,53 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cks-practice-labs
+  namespace: cks-practice-labs
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443},{"HTTP":80}]'
+    alb.ingress.kubernetes.io/ssl-redirect: "443"
+    alb.ingress.kubernetes.io/group.name: cks-labs
+  labels:
+    app.kubernetes.io/name: cks-practice-labs
+spec:
+  rules:
+    - host: cks-labs.yourdomain.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: cks-practice-labs
+                port:
+                  number: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cks-workspace-terminal
+  namespace: cks-workspace
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443},{"HTTP":80}]'
+    alb.ingress.kubernetes.io/ssl-redirect: "443"
+    alb.ingress.kubernetes.io/group.name: cks-labs
+  labels:
+    app.kubernetes.io/name: cks-workspace
+spec:
+  rules:
+    - host: cks-labs.yourdomain.com
+      http:
+        paths:
+          - path: /terminal
+            pathType: Prefix
+            backend:
+              service:
+                name: workspace
+                port:
+                  number: 7681

@@ -1,0 +1,11 @@
+#!/bin/bash
+echo "[*] Setting up Q03 — Kube-API Disable NodePort Access"
+echo ""
+echo "Task: Ensure the Kubernetes API server is only accessible via ClusterIP"
+echo ""
+echo "Check: kubectl get svc kubernetes"
+echo "If type is NodePort, you need to fix it."
+echo ""
+echo "Hints:"
+echo "  - Check kube-apiserver manifest for --kubernetes-service-node-port flag"
+echo "  - Remove the flag and delete the kubernetes service"

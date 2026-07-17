@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cks-practice-labs
+  namespace: cks-practice-labs
+  labels:
+    app.kubernetes.io/name: cks-practice-labs
+    app.kubernetes.io/version: "1.0.0"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cks-practice-labs
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: cks-practice-labs
+    spec:
+      nodeSelector:
+        role: app
+      containers:
+        - name: cks-practice-labs
+          image: 880145880830.dkr.ecr.eu-west-2.amazonaws.com/cks-practice-labs:latest
+          # image: YOUR_ECR_REPO/cks-practice-labs:latest
+          ports:
+            - containerPort: 3000
+              protocol: TCP
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+      securityContext:
+        fsGroup: 1001
