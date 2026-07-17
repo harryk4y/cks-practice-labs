@@ -4,7 +4,7 @@ A web-based lab UI of CKS labs and mock exams. Hosted on EKS with spot instances
 
 ## Content Source
 
-All lab content is derived from [CKS Learning Platform](https://github.com/ViktorUJ/cks/tree/master/tasks/cks/):
+All lab content is derived from [ViktorUJ's CKS Labs](https://github.com/ViktorUJ/cks/tree/master/tasks/cks/):
 - **22 Hands-on Labs** — Individual practice exercises from `cks/tasks/cks/labs/`
 - **13 Mock Exam Questions** — Full exam simulation from `cks/tasks/cks/mock/01` and `mock/02`
 
