@@ -84,5 +84,5 @@ make up
 
 ## Inspired By
 
-- [CKS/SRE Learning Platform](https://github.com/ViktorUJ/cks/tree/master/tasks/cks/) — Source of all lab content
+- [ViktorUJ's CKS Labs](https://github.com/ViktorUJ/cks/tree/master/tasks/cks/) — Source of all lab content
 - [KillerCoda](https://killercoda.com/) / [KodeKloud](https://kodekloud.com/) — UI pattern
